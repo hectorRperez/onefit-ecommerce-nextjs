@@ -11,7 +11,7 @@ import ErrorMessage from "@modules/checkout/components/error-message"
 import Divider from "@modules/common/components/divider"
 import MedusaRadio from "@modules/common/components/radio"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 
 const PICKUP_OPTION_ON = "__PICKUP_ON"
 const PICKUP_OPTION_OFF = "__PICKUP_OFF"
@@ -70,13 +70,17 @@ const Shipping: React.FC<ShippingProps> = ({
 
   const isOpen = searchParams.get("step") === "delivery"
 
-  const _shippingMethods = availableShippingMethods?.filter(
-    (sm) => sm.service_zone?.fulfillment_set?.type !== "pickup"
-  )
+  const _shippingMethods = useMemo(()=> {
+    return availableShippingMethods?.filter(
+      (sm) => sm.type.label !== "pickup"
+    )
+  }, [availableShippingMethods])
 
-  const _pickupMethods = availableShippingMethods?.filter(
-    (sm) => sm.service_zone?.fulfillment_set?.type === "pickup"
-  )
+  const _pickupMethods = useMemo(() => {
+    return availableShippingMethods?.filter(
+      (sm) => sm.type.label === "pickup"
+    )
+  },[availableShippingMethods])
 
   const hasPickupOptions = !!_pickupMethods?.length
 
@@ -104,7 +108,7 @@ const Shipping: React.FC<ShippingProps> = ({
     if (_pickupMethods?.find((m) => m.id === shippingMethodId)) {
       setShowPickupOptions(PICKUP_OPTION_ON)
     }
-  }, [availableShippingMethods])
+  }, [availableShippingMethods, _pickupMethods, cart.id, shippingMethodId, _shippingMethods])
 
   const handleEdit = () => {
     router.push(pathname + "?step=delivery", { scroll: false })
@@ -339,12 +343,6 @@ const Shipping: React.FC<ShippingProps> = ({
                             <div className="flex flex-col">
                               <span className="text-base-regular">
                                 {option.name}
-                              </span>
-                              <span className="text-base-regular text-ui-fg-muted">
-                                {formatAddress(
-                                  option.service_zone?.fulfillment_set?.location
-                                    ?.address
-                                )}
                               </span>
                             </div>
                           </div>
